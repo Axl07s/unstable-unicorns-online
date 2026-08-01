@@ -3,7 +3,7 @@ services:
     name: unstable-unicorns-online
     env: node
     plan: free
-    buildCommand: npm install --include=dev --legacy-peer-deps && npm install typescript@^4.9.5 --legacy-peer-deps && npm run build && npx tsc src/server.ts --outDir server_build --skipLibCheck --esModuleInterop true --target es2019 --module commonjs
+    buildCommand: npm install --include=dev --legacy-peer-deps && npm install typescript@^4.9.5 --legacy-peer-deps && npx tsc src/server.ts --outDir server_build --skipLibCheck --esModuleInterop true --target es2019 --module commonjs
     startCommand: npm run serve
     envVars:
       - key: NODE_ENV
