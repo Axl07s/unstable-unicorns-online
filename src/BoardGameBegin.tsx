@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ImageLoader from './assets/card/imageLoader';
 import BG from './assets/ui/board-background.jpg';
@@ -14,8 +14,11 @@ type Props = {
 };
 
 const BoardGameBegin = (props: Props) => {
+    const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('unstable-unicorns-player-name') || "Player");
 
-    const [playerName, setPlayerName] = useState<string>("Spieler");
+    useEffect(() => {
+        props.moves.changeName(props.playerID, playerName);
+    }, [props.playerID, props.moves]);
 
     return (
         <Wrapper>
@@ -36,7 +39,10 @@ const BoardGameBegin = (props: Props) => {
                 }}>
                     <h1>My name:</h1>
                     <input type="text" name="name" value={playerName} onChange={(evt) => {
-                        setPlayerName(evt.target.value)
+                        const val = evt.target.value;
+                        setPlayerName(val);
+                        localStorage.setItem('unstable-unicorns-player-name', val);
+                        props.moves.changeName(props.playerID, val);
                     }} style={{
                         padding: "1em",
                         backgroundColor: "rgba(255,255,255,0.2)",
