@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import type { Player, PlayerID } from "../game/player";
 import ImageLoader from '../assets/card/imageLoader';
 import { _typeToColor } from './util';
@@ -49,7 +49,7 @@ const PlayerField = React.forwardRef<PlayerFieldHandle, Props>((props, ref) => {
             {props.players.map((pl, idx) => {
                 return (
                     <PlayerBox key={pl.id} current={pl.id === props.currentPlayer}>
-                        <InnerBox onClick={() => props.onPlayerClick(pl.id)}>
+                        <InnerBox current={pl.id === props.currentPlayer} onClick={() => props.onPlayerClick(pl.id)}>
                             <Title>
                                 <div>
                                     {pl.name}
@@ -130,32 +130,53 @@ const Wrapper = styled.div`
 const PlayerBox = styled.div<{ current: boolean }>`
     width: 180px;
     height: 220px;
-    background-color: ${props => props.current ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)"};
     border-radius: 16px;
     margin: 0.6em;
     padding: 0.5em;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    ${props => props.current && css`
+        transform: translateY(-4px);
+    `}
 `;
 
-const InnerBox = styled.div`
+const InnerBox = styled.div<{ current?: boolean }>`
     height: 100%;
     width: 100%;
     border-radius: 12px;
-    background-color: #BC4747;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    background: ${props => props.current 
+      ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(168, 85, 247, 0.18))' 
+      : 'rgba(188, 71, 71, 0.15)'};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid ${props => props.current 
+      ? 'rgba(236, 72, 153, 0.4)' 
+      : 'rgba(255, 255, 255, 0.08)'};
+    box-shadow: ${props => props.current 
+      ? '0 8px 24px rgba(168, 85, 247, 0.25), inset 0 1px 2px rgba(255,255,255,0.1)' 
+      : '0 4px 12px rgba(0,0,0,0.2)'};
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-    :hover {
-        box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    
+    &:hover {
+        border-color: ${props => props.current ? 'rgba(236, 72, 153, 0.6)' : 'rgba(255,255,255,0.2)'};
+        box-shadow: ${props => props.current 
+          ? '0 12px 30px rgba(168, 85, 247, 0.35), inset 0 1px 2px rgba(255,255,255,0.15)' 
+          : '0 8px 20px rgba(0,0,0,0.3)'};
+        background: ${props => props.current 
+          ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.22), rgba(168, 85, 247, 0.22))' 
+          : 'rgba(188, 71, 71, 0.2)'};
     }
 `;
 
 const Title = styled.div`
     color: white;
-    font-family: Open Sans;
+    font-family: 'Outfit', 'Open Sans', sans-serif;
     padding: 0.5em 0.5em 0 0.5em;
-    font-size: 1.2em;
+    font-size: 1.15em;
+    font-weight: 600;
     display: flex;
     position: relative;
+    letter-spacing: -0.01em;
 `;
 
 const UpgradeDowngradeStable = styled.div`
@@ -174,7 +195,13 @@ const UpgradeDowngradeImage = styled.img<{ image: string, isTranslucent: boolean
     border-radius: 8px;
     margin: 0 0.1em;
     opacity: ${props => !props.isTranslucent ? 1 : 0.5};
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    }
 `;
 
 const Stable = styled.div`
@@ -194,20 +221,33 @@ const UnicornImage = styled(motion.div)<{ image: string, isTranslucent: boolean 
     border-radius: 8px;
     margin: 0.2em;
     opacity: ${props => !props.isTranslucent ? 1 : 0.5};
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+        transform: translateY(-4px) scale(1.08);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        z-index: 5;
+    }
 `;
 
 const CardCounter = styled.div`
     position: absolute;
     right: 0.6em;
-    background-color: rgba(255,255,255,0.5);
-    padding: 0.1em 0.3em;
-    border-radius: 4px;
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-    :hover {
-        box-shadow: 0 7px 14px rgba(0,0,0,0.125), 0 5px 5px rgba(0,0,0,0.11);
-      }
+    background: linear-gradient(135deg, #f472b6, #a855f7);
+    color: white;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 0.2em 0.5em;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(168, 85, 247, 0.3);
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    
+    &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 10px rgba(168, 85, 247, 0.45);
+    }
 `;
 
 export default PlayerField;

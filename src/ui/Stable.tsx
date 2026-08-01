@@ -127,22 +127,31 @@ const StableWrapper = styled.div`
     width: 100%;
     display: flex;
     justify-content: center;
-    background-color: #6D5031;
-    padding: 0.5em;
-    border-radius: 16px;
-    min-height: 78px;
+    background-color: #3b2314;
+    padding: 0.6em;
+    border-radius: 18px;
+    min-height: 84px;
+    border: 2px solid rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2);
 `;
 
 const UpgradeDowngradeStableWrapper = styled.div`
-    min-height: 32px;
+    min-height: 36px;
     display: flex;
     flex-direction: row;
+    padding-bottom: 0.25rem;
 `;
 
 const StableItem = styled.div`
     padding: 0 0.5em;
     cursor: pointer;
     position: relative;
+    transition: transform 0.2s ease;
+    
+    &:hover {
+        transform: translateY(-6px);
+        z-index: 10;
+    }
 `;
 
 const glow = keyframes`
@@ -161,7 +170,12 @@ const CardImage = styled(motion.img)<{color: string, isGlowing: boolean, isTrans
     border: 4px solid ${props => props.color};
     animation: ${props => props.isGlowing ? css`${glow} 1s infinite alternate` : 'null'};
     opacity: ${props => !props.isTranslucent ? 1 : 0.5};
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
 `;
 
 const MiniCardImage = styled(motion.img)<{color: string, isGlowing: boolean, isTranslucent: boolean}>`
@@ -173,22 +187,36 @@ const MiniCardImage = styled(motion.img)<{color: string, isGlowing: boolean, isT
     margin: 0 0.25em;
     animation: ${props => props.isGlowing ? css`${glow} 1s infinite alternate` : 'null'};
     opacity: ${props => !props.isTranslucent ? 1 : 0.5};
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
 `;
 
 const Placeholder = styled.div`
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0,0,0,0.25);
     width: 100%;
     margin-left: 1em;
     border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: Open Sans Condensed;
-    color: rgba(0,0,0,0.6);
-    font-size: 1.4em;
+    font-family: 'Outfit', 'Open Sans Condensed', sans-serif;
+    color: rgba(255,255,255,0.4);
+    font-weight: 500;
+    font-size: 1.2em;
     cursor: pointer;
     user-select: none;
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+
+    &:hover {
+        background-color: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.8);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
 `;
 
 // keyframes
