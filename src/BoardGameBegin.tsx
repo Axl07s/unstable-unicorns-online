@@ -58,6 +58,7 @@ const BoardGameBegin = (props: Props) => {
                     <div style={{
                         display: "flex",
                         justifyContent: "center",
+                        flexWrap: "wrap",
                         marginTop: "1em"
                     }}>
                         {props.babyCards.map(card => {
@@ -78,7 +79,7 @@ const BoardGameBegin = (props: Props) => {
                                 }  
                             } 
 
-                            return (<div style={{ margin: "0.5em" }} key={card.id}>
+                            return (<div style={{ margin: "0.5em", width: "90px", minWidth: "90px" }} key={card.id}>
                                 <img style={{ cursor: "pointer", ...style, borderRadius: "16px" }} src={ImageLoader.load(card.image)} width="100%" onClick={() => {
                                     if (props.G.babyStarter.find(s => s.owner === props.playerID)) {
                                         return;

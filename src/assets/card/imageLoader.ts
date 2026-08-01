@@ -15,7 +15,8 @@ const ImageLoader = {
         if (key === "back") {
             return BACK;
         }
-        return require(`./square/${key}.png`).default;
+        const res = require(`./square/${key}.png`);
+        return res.default || res;
     },
     icon: (type: CardType) => {
         switch(type) {
