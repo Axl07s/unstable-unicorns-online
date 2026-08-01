@@ -88,6 +88,12 @@ type CardInteraction = {
 const Board = (props: any) => {
     const { G, ctx, playerID, moves } = props as Props;
 
+    const [timeLeft, setTimeLeft] = useState<number | undefined>(undefined);
+    const [timerType, setTimerType] = useState<"your_turn" | "your_neigh" | "waiting_turn" | "waiting_neigh" | undefined>(undefined);
+    const [activeTargetName, setActiveTargetName] = useState<string>("");
+
+    const boardStates = getBoardState(G, ctx, playerID);
+
     const [playYourTurnAlert] = useSound(YourTurnSound, {
         volume: 0.3,
     });
@@ -174,6 +180,102 @@ const Board = (props: any) => {
         }
     }, [G.uiExecuteDo?.id]);
 
+    const triggerAutoAction = () => {
+        if (timerType === "your_neigh") {
+            if (G.neighDiscussion) {
+                moves.dontPlayNeigh(playerID, G.neighDiscussion.rounds.length - 1);
+            }
+        } else if (timerType === "your_turn") {
+            const activeStage = ctx.activePlayers?.[playerID];
+            if (activeStage === "beginning") {
+                moves.drawAndAdvance();
+            } else if (activeStage === "action_phase") {
+                const discardState = boardStates.find(s => s.type === "discard" || s.type === "discard__popup__committed");
+                if (discardState && G.hand[playerID]?.length > 0) {
+                    moves.executeDo(discardState.info!.instructionID, { protagonist: playerID, cardID: G.hand[playerID][0] });
+                } else {
+                    if (G.countPlayedCardsInActionPhase === 0) {
+                        moves.drawAndEnd(playerID);
+                    } else {
+                        moves.end(playerID);
+                    }
+                }
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (ctx.phase === "pregame") {
+            setTimeLeft(undefined);
+            setTimerType(undefined);
+            return;
+        }
+
+        // 1. Neigh round active
+        if (G.neighDiscussion) {
+            const currentRound = G.neighDiscussion.rounds[G.neighDiscussion.rounds.length - 1];
+            const myVote = currentRound.playerState[playerID]?.vote;
+            if (myVote === "undecided") {
+                setTimerType("your_neigh");
+                setTimeLeft(12);
+            } else {
+                setTimerType("waiting_neigh");
+                setTimeLeft(12);
+                const undecided = Object.keys(currentRound.playerState).filter(
+                    pid => currentRound.playerState[pid].vote === "undecided"
+                );
+                const names = undecided.map(pid => G.players[parseInt(pid)]?.name || `Player ${pid}`).join(", ");
+                setActiveTargetName(names);
+            }
+            return;
+        }
+
+        // 2. Normal Turn active
+        if (ctx.currentPlayer === playerID) {
+            const activeStage = ctx.activePlayers?.[playerID];
+            if (activeStage === "beginning") {
+                setTimerType("your_turn");
+                setTimeLeft(20);
+            } else if (activeStage === "action_phase") {
+                const isDiscarding = boardStates.some(s => s.type === "discard" || s.type === "discard__popup__committed" || s.type === "discard__popup__ask");
+                if (isDiscarding) {
+                    setTimerType("your_turn");
+                    setTimeLeft(15);
+                } else {
+                    setTimerType("your_turn");
+                    setTimeLeft(30);
+                }
+            } else {
+                setTimeLeft(undefined);
+                setTimerType(undefined);
+            }
+        } else {
+            setTimerType("waiting_turn");
+            setTimeLeft(30);
+            const activeName = G.players[parseInt(ctx.currentPlayer)]?.name || `Player ${ctx.currentPlayer}`;
+            setActiveTargetName(activeName);
+        }
+    }, [ctx.turn, ctx.currentPlayer, G.neighDiscussion, ctx.activePlayers, playerID, boardStates.length]);
+
+    useEffect(() => {
+        if (timeLeft === undefined || timeLeft <= 0) return;
+
+        const interval = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev === undefined || prev <= 1) {
+                    clearInterval(interval);
+                    if (prev === 1) {
+                        triggerAutoAction();
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [timeLeft, timerType]);
+
     const [showDeckFinder, setShowDeckFinder] = useState<SearchTarget[] | undefined>(undefined);
     const [showPlayerHand, setShowPlayerHand] = useState<PlayerID | undefined>(undefined);
     const [showBlatantThievery, setShowBlatantThievery] = useState<PlayerID | undefined>(undefined);
@@ -227,7 +329,6 @@ const Board = (props: any) => {
 
     const stableHighlightMode = hoverTargets?.targets.filter(s => s.type === "stable_card").map(s => s.info.cardID).concat([hoverTargets.sourceCardID]);
 
-    const boardStates = getBoardState(G, ctx, playerID);
     if (boardStates.find(s => s.type === "destroy__click_on_card_in_stable" || s.type === "sacrifice__clickOnCardInStable")) {
         const boardState = boardStates.find(s => s.type === "destroy__click_on_card_in_stable" || s.type === "sacrifice__clickOnCardInStable")!;
         // only update if the card interaction is different 
@@ -342,7 +443,15 @@ const Board = (props: any) => {
                     Englisch
                 </div>
 
-                
+                {timeLeft !== undefined && (
+                    <TimerBar $type={timerType}>
+                        {timerType === "your_turn" && `⏱️ Tu turno: ${timeLeft}s`}
+                        {timerType === "your_neigh" && `⚡ ¿Neigh? Tienes ${timeLeft}s`}
+                        {timerType === "waiting_turn" && `⏳ Esperando a ${activeTargetName}: ${timeLeft}s`}
+                        {timerType === "waiting_neigh" && `⏳ Esperando Neigh de ${activeTargetName}: ${timeLeft}s`}
+                    </TimerBar>
+                )}
+
                 {showDeckFinder &&
                     <Finder
                         cards={showDeckFinder.map(s => G.deck[s.cardID])}
@@ -941,19 +1050,30 @@ const renderInfoLabel = (G: UnstableUnicornsGame, ctx: Ctx, playerID: PlayerID, 
     const openScenes = _findOpenScenesWithProtagonist(G, playerID);
     const scenesInProgress = _findInProgressScenesWithProtagonist(G, playerID);
 
-    if (ctx.currentPlayer === playerID && ctx.activePlayers![playerID] === "beginning" && openScenes.length > 0) {
-        text = "One of your cards has an effect that can be activated. You can activate it and after that draw a card. You may also skip the effect and just draw a card."
-    }
-
-    if (ctx.currentPlayer === playerID && ctx.activePlayers![playerID] === "beginning" && scenesInProgress.length > 0) {
-        text = "One of your cards has an effect that must be activated. You must first activate it before you can draw a card."
+    if (ctx.currentPlayer === playerID && ctx.activePlayers![playerID] === "beginning") {
+        if (openScenes.length > 0) {
+            text = "One of your cards has an effect that can be activated. You can activate it and after that draw a card. You may also skip the effect and just draw a card. / Una de tus cartas tiene un efecto opcional. Puedes activarlo o saltarlo para robar carta."
+        } else if (scenesInProgress.length > 0) {
+            text = "One of your cards has an effect that must be activated. You must first activate it before you can draw a card. / Una de tus cartas tiene un efecto obligatorio. Debes activarlo primero."
+        } else {
+            text = "👉 Click on the glowing DECK to draw a card and start your turn! / ¡Haz click en el MAZO brillante para robar una carta y empezar tu turno!"
+        }
     }
 
     if (playerID === ctx.currentPlayer) {
         if (G.countPlayedCardsInActionPhase === 0 && G.neighDiscussion === undefined && ctx.activePlayers![playerID] === "action_phase") {
             // action phase and no card has been played or drawn
             // player may draw a card or play a card
-            text = "You can play a card from your hand or you can draw a card. You cannot do both."
+            text = "👉 You can play a card from your hand or draw a card (click the DECK). / Puedes jugar una carta de tu mano o robar otra carta (haz click en el MAZO)."
+        }
+    }
+
+    if (G.neighDiscussion) {
+        const currentRound = G.neighDiscussion.rounds[G.neighDiscussion.rounds.length - 1];
+        if (currentRound.playerState[playerID]?.vote === "undecided") {
+            text = `⚡ A card is being played! Click a NEIGH card in your hand to block it, or click 'Don't Neigh' to pass. / ¡Se está jugando una carta! Haz click en un 'Neigh' de tu mano para bloquearla, o en 'Don't Neigh' para pasar.`;
+        } else {
+            text = `Waiting for other players to decide whether to Neigh... / Esperando a que los demás decidan si juegan un Neigh...`;
         }
     }
 
@@ -1132,6 +1252,37 @@ const InfoLabelWrapper = styled.div`
     justify-content: center;
     position: absolute; 
     top: -16px;
+`;
+
+const TimerBar = styled.div<{ $type?: string }>`
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid ${props => 
+        props.$type === "your_turn" ? "rgba(236, 72, 153, 0.4)" : 
+        props.$type === "your_neigh" ? "rgba(245, 158, 11, 0.4)" : 
+        "rgba(255, 255, 255, 0.1)"
+    };
+    border-radius: 9999px;
+    padding: 8px 20px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: ${props => 
+        props.$type === "your_turn" ? "0 0 20px rgba(236, 72, 153, 0.3)" : 
+        props.$type === "your_neigh" ? "0 0 20px rgba(245, 158, 11, 0.3)" : 
+        "0 4px 20px rgba(0, 0, 0, 0.4)"
+    };
+    z-index: 9999;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
 `;
 
 export default Board;
