@@ -34,8 +34,8 @@ const UnstableUnicornsClient = ({ debug }: Props) => {
             game: UnstableUnicorns,
             board: Board,
             numPlayers: parseInt(numPlayers),
-            //multiplayer: SocketIO({ server: `localhost:8000` }),
             multiplayer: SocketIO({ server: `https://${window.location.hostname}` }),
+            debug: false,
         });
     } else {
         return (<h1>Num players argument is missing</h1>);
