@@ -12,8 +12,8 @@ const frontEndAppBuildPath = path.resolve(__dirname, '../build');
 server.app.use(serve(frontEndAppBuildPath))
 
 const lobbyConfig = {
-  apiPort: 8080,
-  apiCallback: () => console.log('Running Lobby API on port 8080...'),
+  apiPort: 8081,
+  apiCallback: () => console.log('Running Lobby API on port 8081...'),
 };
 
 server.run({port: PORT, lobbyConfig}, () => {
