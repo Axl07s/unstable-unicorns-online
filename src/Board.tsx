@@ -284,8 +284,20 @@ const Board = (props: any) => {
     }, [G.uiCardToCard?.id]);
 
     if (ctx.phase === "pregame") {
+        const cards = G.deck ? _.first(G.deck, 13) : [];
+        if (!cards || cards.length === 0) {
+            return (
+                <div style={{ color: "white", padding: "2em", backgroundColor: "#1e293b", fontFamily: "sans-serif", height: "100vh" }}>
+                    <h2>Error: No baby cards found in deck!</h2>
+                    <p>G is: {G ? "Defined" : "Undefined"}</p>
+                    <p>G.deck is: {G?.deck ? `Array of length ${G.deck.length}` : "Undefined/Empty"}</p>
+                    <p>Player ID: {playerID}</p>
+                    <p>Num Players: {ctx.numPlayers}</p>
+                </div>
+            );
+        }
         return (
-            <BoardGameBegin G={G} babyCards={_.first(G.deck, 13)} playerID={playerID} moves={moves} />
+            <BoardGameBegin G={G} babyCards={cards} playerID={playerID} moves={moves} />
         );
     }
 
