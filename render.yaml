@@ -12,3 +12,5 @@ services:
         value: false
       - key: NODE_OPTIONS
         value: --max_old_space_size=400
+      - key: GENERATE_SOURCEMAP
+        value: "false"
